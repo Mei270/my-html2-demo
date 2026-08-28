@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyPact - Work Smarter, Not Harder</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f3ff',
+              100: '#e1e7fe',
+              200: '#c5d0fe',
+              500: '#536dfe',
+              600: '#4355db',
+              700: '#3442b7',
+              800: '#2a3493',
+            }
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+            'card-hover': '0 12px 24px -8px rgba(83, 109, 254, 0.15)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Quick Tips Custom Style */
+    [data-tip] {
+      position: relative;
+    }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 0.35rem 0.65rem;
+      border-radius: 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 60;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    [data-tip]:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    /* Quick Tips direction variations */
+    [data-tip-pos="right"]::after {
+      bottom: auto;
+      top: 50%;
+      left: 110%;
+      transform: translateY(-50%) translateX(-4px);
+    }
+    [data-tip-pos="right"]:hover::after {
+      transform: translateY(-50%) translateX(0);
+    }
+    [data-tip-pos="bottom"]::after {
+      top: 125%;
+      bottom: auto;
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    [data-tip-pos="bottom"]:hover::after {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Smooth Tab Animation */
+    .tab-content {
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50/80 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="fixed top-20 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- TOP NAVBAR -->
+  <header class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <div class="flex items-center space-x-3 cursor-pointer group" onclick="switchTab('home')" data-tip="返回主页概览" data-tip-key="tip_go_home">
+      <div class="w-9 h-9 bg-gradient-to-tr from-brand-600 to-brand-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-brand-500/25 group-hover:scale-105 transition-transform">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div>
+        <span class="font-black text-xl text-slate-900 tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">StudyPact</span>
+        <span class="text-xs italic text-slate-400 font-serif ml-2 hidden sm:inline" data-i18n="slogan">Work Smarter, Not Harder</span>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-4 text-sm">
+      <!-- Live Clock linked to Real Local System Time -->
+      <div class="hidden md:flex items-center space-x-2 text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-inner" data-tip="本地系统实时时间" data-tip-key="tip_clock">
+        <i class="fa-regular fa-clock text-brand-500 animate-pulse"></i>
+        <span id="live-timer" class="font-mono text-xs font-semibold text-slate-700">Loading...</span>
+      </div>
+
+      <!-- Language Toggle Button -->
+      <button id="lang-btn" onclick="toggleLanguage()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-brand-50 hover:border-brand-200 hover:text-brand-600 transition shadow-xs active:scale-95" data-tip="切换中/英文语言" data-tip-key="tip_toggle_lang" data-tip-pos="bottom">
+        <i class="fa-solid fa-globe text-brand-500"></i>
+        <span id="lang-text">EN / 中文</span>
+      </button>
+
+      <!-- Notification Bell with Dropdown -->
+      <div class="relative">
+        <button id="notif-btn" onclick="toggleNotifDropdown(event)" class="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition active:scale-95" data-tip="查看通知消息" data-tip-key="tip_notif" data-tip-pos="bottom">
+          <i class="fa-regular fa-bell text-lg"></i>
+          <span id="notif-badge" class="absolute top-1 right-1 bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full border-2 border-white shadow-xs">4</span>
+        </button>
+
+        <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+          <div class="px-4 py-2 border-b border-slate-100 flex justify-between items-center">
+            <span class="font-bold text-xs text-slate-800" data-i18n="notifications">Notifications</span>
+            <button onclick="clearNotifications()" class="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline" data-i18n="clear_all">Clear all</button>
+          </div>
+          <div id="notif-list" class="max-h-64 overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+            <div class="p-3 text-xs hover:bg-slate-50/80 transition">
+              <p class="text-amber-600 font-medium flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="notif_warning_alice">Warning: Alice Chen inactive for 7+ days.</span></p>
+              <span class="text-[10px] text-slate-400 mt-1 block">1m ago</span>
+            </div>
+            <div class="p-3 text-xs hover:bg-slate-50/80 transition">
+              <p class="text-amber-600 font-medium flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="notif_warning_alice">Warning: Alice Chen inactive for 7+ days.</span></p>
+              <span class="text-[10px] text-slate-400 mt-1 block">3m ago</span>
+            </div>
+            <div class="p-3 text-xs hover:bg-slate-50/80 transition">
+              <p class="text-emerald-600 font-medium flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> <span data-i18n="notif_task_done">Bob completed Database Schema Setup.</span></p>
+              <span class="text-[10px] text-slate-400 mt-1 block">10m ago</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Menu -->
+      <div class="relative">
+        <button id="profile-btn" onclick="toggleProfileDropdown(event)" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-bold flex items-center justify-center ring-2 ring-brand-100 hover:ring-brand-300 transition active:scale-95 shadow-xs" data-tip="用户个人中心" data-tip-key="tip_profile" data-tip-pos="bottom">
+          11
+        </button>
+
+        <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-52 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 text-xs">
+          <div class="px-4 py-2.5 border-b border-slate-100">
+            <p class="font-bold text-slate-900 text-sm">11 (User)</p>
+            <p class="text-slate-400 text-[10px]" data-i18n="group_owner">Group Owner</p>
+          </div>
+          <a href="#" class="flex items-center px-4 py-2 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fa-regular fa-user mr-2.5 w-4"></i> <span data-i18n="profile">Profile</span></a>
+          <a href="#" class="flex items-center px-4 py-2 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fa-solid fa-gear mr-2.5 w-4"></i> <span data-i18n="settings">Settings</span></a>
+          <a href="#" class="flex items-center px-4 py-2 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition"><i class="fa-solid fa-award mr-2.5 w-4"></i> <span data-i18n="my_badges">My Badges</span> <span class="ml-auto bg-brand-100 text-brand-600 px-2 py-0.5 rounded-full text-[10px] font-extrabold">1</span></a>
+          <div class="border-t border-slate-100 my-1"></div>
+          <a href="#" class="flex items-center px-4 py-2 text-rose-600 hover:bg-rose-50 transition"><i class="fa-solid fa-arrow-right-from-bracket mr-2.5 w-4"></i> <span data-i18n="logout">Logout</span></a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <div class="flex flex-1 overflow-hidden relative">
+    
+    <!-- SIDEBAR NAV -->
+    <aside id="sidebar-panel" class="w-64 bg-white/80 backdrop-blur-md border-r border-slate-200/80 flex flex-col justify-between shrink-0 hidden md:flex select-none transition-all duration-300 z-20">
+      <div class="p-4 space-y-6 overflow-y-auto custom-scrollbar">
+        <div>
+          <div class="flex items-center justify-between px-3 mb-2">
+            <span class="text-[10px] font-black text-slate-400 tracking-wider uppercase" data-i18n="nav_main">Main Menu</span>
+            <button onclick="toggleSidebarCollapse()" class="text-slate-400 hover:text-slate-600 text-xs" data-tip="折叠/展开侧边栏" data-tip-key="tip_toggle_sidebar">
+              <i class="fa-solid fa-angles-left" id="sidebar-toggle-icon"></i>
+            </button>
+          </div>
+          <nav class="space-y-1">
+            <button onclick="switchTab('home')" id="nav-home" class="nav-item w-full flex items-center px-3 py-2.5 rounded-xl text-xs font-bold text-brand-600 bg-brand-50/80 transition" data-tip="返回主页控制台" data-tip-key="tip_nav_home" data-tip-pos="right">
+              <i class="fa-solid fa-house w-6 text-sm"></i> <span class="nav-text" data-i18n="nav_home">Home</span>
+            </button>
+            <button onclick="switchTab('taskboard')" id="nav-taskboard" class="nav-item w-full flex items-center px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100/80 transition" data-tip="拖拽管理任务面板" data-tip-key="tip_nav_taskboard" data-tip-pos="right">
+              <i class="fa-solid fa-columns w-6 text-sm"></i> <span class="nav-text" data-i18n="nav_taskboard">Task Board</span>
+            </button>
+            <button onclick="switchTab('submissions')" id="nav-submissions" class="nav-item w-full flex items-center px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100/80 transition" data-tip="文件上传与组员互评" data-tip-key="tip_nav_submissions" data-tip-pos="right">
+              <i class="fa-solid fa-upload w-6 text-sm"></i> <span class="nav-text" data-i18n="nav_submissions">Submissions</span>
+            </button>
+            <button onclick="switchTab('stats')" id="nav-stats" class="nav-item w-full flex items-center px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100/80 transition" data-tip="团队贡献度与数据统计" data-tip-key="tip_nav_stats" data-tip-pos="right">
+              <i class="fa-solid fa-chart-pie w-6 text-sm"></i> <span class="nav-text" data-i18n="nav_stats">Stats</span>
+            </button>
+            <button onclick="switchTab('help')" id="nav-help" class="nav-item w-full flex items-center px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100/80 transition" data-tip="指令指南与帮助说明" data-tip-key="tip_nav_help" data-tip-pos="right">
+              <i class="fa-solid fa-circle-question w-6 text-sm"></i> <span class="nav-text" data-i18n="nav_help">Help</span>
+            </button>
+          </nav>
+        </div>
+
+        <div>
+          <span class="text-[10px] font-black text-slate-400 tracking-wider uppercase px-3" data-i18n="nav_my_groups">My Groups</span>
+          <div class="mt-2 space-y-1" id="sidebar-groups-list">
+            <!-- Dynamically populated groups -->
+          </div>
+        </div>
+      </div>
+
+      <!-- New Group Button -->
+      <div class="p-4 border-t border-slate-100">
+        <button onclick="openCreateGroupModal()" class="w-full flex items-center justify-center space-x-2 border border-slate-200 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50/50 py-2.5 rounded-xl text-xs font-bold text-slate-700 transition bg-white shadow-xs active:scale-95" data-tip="创建一个新的学习小组" data-tip-key="tip_new_group" data-tip-pos="right">
+          <i class="fa-solid fa-plus text-brand-500"></i>
+          <span class="nav-text" data-i18n="new_group">New Group</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 bg-slate-50/50 overflow-y-auto p-6 custom-scrollbar relative">
+
+      <!-- SECTION 1: HOME PAGE -->
+      <section id="page-home" class="tab-content space-y-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight" data-i18n="welcome_title">Welcome back, 11!</h1>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="welcome_subtitle">Here's your group activity overview.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Active Semester
+            </span>
+          </div>
+        </div>
+
+        <!-- Top Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-card-hover transition-all duration-200 flex items-center justify-between group">
+            <div>
+              <div id="stat-groups-cnt" class="text-3xl font-black text-slate-900">1</div>
+              <div class="text-xs font-semibold text-slate-400 mt-1" data-i18n="stat_groups">Groups</div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg group-hover:scale-110 transition-transform"><i class="fa-solid fa-layer-group"></i></div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-card-hover transition-all duration-200 flex items-center justify-between group">
+            <div>
+              <div id="stat-tasks-cnt" class="text-3xl font-black text-slate-900">4</div>
+              <div class="text-xs font-semibold text-slate-400 mt-1" data-i18n="stat_total_tasks">Total Tasks</div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg group-hover:scale-110 transition-transform"><i class="fa-solid fa-list-check"></i></div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-card-hover transition-all duration-200 flex items-center justify-between group">
+            <div>
+              <div id="stat-completed-cnt" class="text-3xl font-black text-slate-900">1</div>
+              <div class="text-xs font-semibold text-slate-400 mt-1" data-i18n="stat_completed">Completed</div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-lg group-hover:scale-110 transition-transform"><i class="fa-solid fa-circle-check"></i></div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-card-hover transition-all duration-200 flex items-center justify-between group">
+            <div>
+              <div id="stat-members-cnt" class="text-3xl font-black text-slate-900">3</div>
+              <div class="text-xs font-semibold text-slate-400 mt-1" data-i18n="stat_members">Members</div>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-lg group-hover:scale-110 transition-transform"><i class="fa-solid fa-users"></i></div>
+          </div>
+        </div>
+
+        <!-- Quick Enter / Create Input -->
+        <div class="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs flex items-center space-x-2 focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500 transition">
+          <i class="fa-solid fa-magnifying-glass text-slate-400 ml-3"></i>
+          <input id="quick-group-input" type="text" placeholder="Enter or create a group..." data-i18n-ph="ph_quick_group" class="flex-1 px-2 py-2 text-xs border-0 focus:outline-none text-slate-700 placeholder-slate-400 font-medium">
+          <button onclick="handleQuickGroupSubmit()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-md shadow-brand-500/20 flex items-center space-x-2 shrink-0 active:scale-95" data-tip="直达小组或创建新小组" data-tip-key="tip_go_create">
+            <span data-i18n="go_create">Go / Create</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </div>
+
+        <!-- Group Cards Grid -->
+        <div>
+          <h2 class="font-black text-sm text-slate-800 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-folder-open text-brand-600"></i>
+            <span data-i18n="active_groups">Active Study Groups</span>
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="home-groups-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- All Tasks Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-list-ul text-brand-600"></i>
+              <h2 class="font-bold text-sm text-slate-800" data-i18n="all_tasks">All Tasks Overview</h2>
+            </div>
+            <span class="text-xs text-slate-400 font-medium"><span id="home-task-total-txt">4 total</span> · <span class="text-rose-500 font-bold">3 urgent</span></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th class="py-3 px-4" data-i18n="th_task">Task</th>
+                  <th class="py-3 px-4" data-i18n="th_group">Group</th>
+                  <th class="py-3 px-4" data-i18n="th_assignee">Assignee</th>
+                  <th class="py-3 px-4" data-i18n="th_deadline">Deadline</th>
+                  <th class="py-3 px-4" data-i18n="th_status">Status</th>
+                </tr>
+              </thead>
+              <tbody id="home-tasks-tbody" class="divide-y divide-slate-100 text-xs font-medium">
+                <!-- Javascript populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Notification & Profile Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-bell text-brand-600"></i>
+                <h3 class="font-bold text-sm text-slate-800" data-i18n="recent_alerts">Recent System Alerts</h3>
+                <span class="bg-brand-100 text-brand-600 font-extrabold px-2 py-0.5 rounded-full text-[10px]">4</span>
+              </div>
+              <button onclick="clearNotifications()" class="text-xs text-slate-500 hover:text-slate-800 border border-slate-200 px-3 py-1 rounded-xl transition hover:bg-slate-50" data-i18n="clear_all">Clear all</button>
+            </div>
+            <div class="space-y-2.5">
+              <div class="p-3 bg-amber-50/60 border border-amber-200/60 rounded-xl text-xs text-amber-900 flex items-start space-x-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+                <div class="flex-1">
+                  <p class="font-semibold" data-i18n="notif_warning_alice">Warning: Alice Chen inactive for 7+ days.</p>
+                  <span class="text-[10px] text-slate-400">1m ago</span>
+                </div>
+              </div>
+              <div class="p-3 bg-amber-50/60 border border-amber-200/60 rounded-xl text-xs text-amber-900 flex items-start space-x-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+                <div class="flex-1">
+                  <p class="font-semibold" data-i18n="notif_warning_alice">Warning: Alice Chen inactive for 7+ days.</p>
+                  <span class="text-[10px] text-slate-400">3m ago</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini Profile Panel -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+            <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+              <div class="w-12 h-12 bg-gradient-to-tr from-brand-600 to-brand-500 rounded-2xl text-white font-black flex items-center justify-center text-lg shadow-md shadow-brand-500/20">
+                11
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">11 (User)</h4>
+                <p class="text-xs text-slate-400 font-medium" data-i18n="user_role">Owner / Student</p>
+              </div>
+            </div>
+            <div class="space-y-2 text-xs">
+              <a href="#" class="flex items-center text-slate-600 hover:text-brand-600 py-1.5 transition font-medium"><i class="fa-regular fa-user w-6 text-slate-400"></i> <span data-i18n="profile">Profile</span></a>
+              <a href="#" class="flex items-center text-slate-600 hover:text-brand-600 py-1.5 transition font-medium"><i class="fa-solid fa-gear w-6 text-slate-400"></i> <span data-i18n="settings">Settings</span></a>
+              <a href="#" class="flex items-center justify-between text-slate-600 hover:text-brand-600 py-1.5 transition font-medium">
+                <span><i class="fa-solid fa-award w-6 text-slate-400"></i> <span data-i18n="my_badges">My Badges</span></span>
+                <span class="bg-brand-100 text-brand-600 font-extrabold px-2 py-0.5 rounded-full text-[10px]">1</span>
+              </a>
+            </div>
+            <button class="w-full text-left text-xs font-bold text-rose-600 hover:bg-rose-50 p-2.5 rounded-xl transition flex items-center">
+              <i class="fa-solid fa-arrow-right-from-bracket w-6"></i> <span data-i18n="logout">Logout</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: TASK BOARD -->
+      <section id="page-taskboard" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight" data-i18n="taskboard_title">Task Management Board</h1>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="taskboard_subtitle">Drag tasks from the pool into status columns, or create new ones.</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 text-xs bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+              <span class="text-slate-500 font-bold" data-i18n="active_group_label">Active Group:</span>
+              <select id="taskboard-group-select" onchange="syncActiveGroup(this.value)" class="bg-transparent font-bold text-brand-600 focus:outline-none cursor-pointer">
+                <!-- Syncs with available groups -->
+              </select>
+            </div>
+            <button onclick="openAddTaskModal()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-md shadow-brand-500/20 flex items-center space-x-1.5 active:scale-95" data-tip="创建新任务" data-tip-key="tip_add_task">
+              <i class="fa-solid fa-plus"></i>
+              <span data-i18n="add_task">Add Task</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Kanban & Pool Wrapper Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Task Pool Left Panel -->
+          <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 flex flex-col h-[680px]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-box-archive text-slate-500"></i>
+                <h3 class="font-bold text-sm text-slate-800" data-i18n="task_pool">Task Pool</h3>
+              </div>
+              <span id="pool-count-badge" class="text-xs text-slate-400 font-semibold">0 tasks</span>
+            </div>
+            <div class="mt-3">
+              <div class="relative">
+                <i class="fa-solid fa-filter text-slate-400 text-xs absolute left-3 top-3"></i>
+                <input id="pool-search-input" onkeyup="filterTaskPool()" type="text" placeholder="Filter tasks..." data-i18n-ph="ph_filter_tasks" class="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition font-medium">
+              </div>
+            </div>
+            
+            <div id="task-pool-container" class="mt-4 flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Kanban Status Columns Right Panel -->
+          <div class="lg:col-span-7 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Pending Column -->
+            <div class="bg-amber-50/40 rounded-2xl border border-amber-200/60 p-3.5 flex flex-col h-[680px] transition-colors" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="dropTask(event, 'Pending')">
+              <div class="flex items-center justify-between pb-2 mb-3 border-b border-amber-200/60 px-1">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-clock text-amber-500 text-xs"></i>
+                  <span class="font-bold text-xs text-amber-900" data-i18n="col_pending">Pending</span>
+                </div>
+                <span id="pending-count" class="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
+              </div>
+              <div id="col-pending" class="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                <!-- Drop target -->
+              </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="bg-blue-50/40 rounded-2xl border border-blue-200/60 p-3.5 flex flex-col h-[680px] transition-colors" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="dropTask(event, 'In Progress')">
+              <div class="flex items-center justify-between pb-2 mb-3 border-b border-blue-200/60 px-1">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-wrench text-blue-500 text-xs"></i>
+                  <span class="font-bold text-xs text-blue-900" data-i18n="col_inprogress">In Progress</span>
+                </div>
+                <span id="inprogress-count" class="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
+              </div>
+              <div id="col-inprogress" class="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                <!-- Drop target -->
+              </div>
+            </div>
+
+            <!-- Completed Column -->
+            <div class="bg-emerald-50/40 rounded-2xl border border-emerald-200/60 p-3.5 flex flex-col h-[680px] transition-colors" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="dropTask(event, 'Completed')">
+              <div class="flex items-center justify-between pb-2 mb-3 border-b border-emerald-200/60 px-1">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                  <span class="font-bold text-xs text-emerald-900" data-i18n="col_completed">Completed</span>
+                </div>
+                <span id="completed-count" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
+              </div>
+              <div id="col-completed" class="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                <!-- Drop target -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: SUBMISSIONS & REVIEWS -->
+      <section id="page-submissions" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight" data-i18n="submissions_title">Submissions & Review</h1>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="submissions_subtitle">Upload group deliverables, perform peer reviews, and discuss.</p>
+          </div>
+          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs text-xs">
+            <span class="text-slate-500 font-bold" data-i18n="active_group_label">Active Group:</span>
+            <select id="submissions-group-select" onchange="syncActiveGroup(this.value)" class="bg-transparent font-bold text-brand-600 focus:outline-none cursor-pointer">
+              <!-- Dynamic sync -->
+            </select>
+          </div>
+        </div>
+
+        <!-- File Upload Area -->
+        <div class="bg-white rounded-2xl border-2 border-dashed border-slate-200/90 p-8 text-center hover:border-brand-400 hover:bg-brand-50/20 transition-all cursor-pointer relative group" id="drop-zone" onclick="document.getElementById('file-input').click()" data-tip="点击或将文件拖拽至此处上传" data-tip-key="tip_upload_zone">
+          <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
+          <div class="w-16 h-16 bg-brand-50 rounded-2xl text-brand-600 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform shadow-xs">
+            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+          </div>
+          <p class="text-xs font-bold text-slate-800" data-i18n="drag_files_here">Drag & drop files here, or click to browse</p>
+          <p class="text-[11px] text-slate-400 mt-1" data-i18n="supported_formats">Supports PDF, DOCX, ZIP, PNG, MP4 up to 50MB</p>
+          <button type="button" class="mt-4 bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2 rounded-xl text-xs transition inline-block shadow-md active:scale-95" data-i18n="choose_files">
+            Choose Files
+          </button>
+        </div>
+
+        <!-- Uploaded Files Grid -->
+        <div class="space-y-3">
+          <h2 class="font-black text-sm text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-folder-closed text-brand-600"></i>
+            <span data-i18n="uploaded_files">Uploaded Files</span>
+          </h2>
+          <div id="uploaded-files-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Dynamically populated files -->
+          </div>
+        </div>
+
+        <!-- Interactive Deadline Banner -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+          <div class="flex items-center space-x-3 text-xs">
+            <i class="fa-regular fa-calendar-days text-brand-600 text-lg"></i>
+            <span class="font-bold text-slate-800" data-i18n="sub_deadline_label">Submission Deadline:</span>
+            <input type="date" id="submission-deadline-picker" value="2026-03-20" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-medium focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+            <button onclick="updateSubmissionDeadline()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-1.5 rounded-xl text-xs transition active:scale-95" data-tip="更新提交截止时间" data-tip-key="tip_set_deadline" data-i18n="btn_set">Set</button>
+          </div>
+          <span id="submission-deadline-status" class="text-xs font-black text-rose-600 bg-rose-50 border border-rose-100 px-3.5 py-1.5 rounded-xl">
+            2026-03-20 (Overdue)
+          </span>
+        </div>
+
+        <!-- Peer Reviews Section -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-5">
+          <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h2 class="font-black text-sm text-slate-800 flex items-center space-x-2">
+              <i class="fa-solid fa-comments text-brand-600"></i>
+              <span data-i18n="peer_reviews">Peer Reviews & Feedback</span>
+            </h2>
+            <button onclick="openPeerReviewModal()" class="bg-brand-50 text-brand-600 hover:bg-brand-100 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center space-x-1.5 active:scale-95" data-tip="对小组成员撰写评价" data-tip-key="tip_add_review">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span data-i18n="add_review">Add Review</span>
+            </button>
+          </div>
+
+          <div id="peer-reviews-list" class="space-y-4">
+            <!-- Interactive Peer Reviews Rendered Here -->
+          </div>
+        </div>
+
+        <!-- Group Discussion Box -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+          <h2 class="font-black text-sm text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-users-between-lines text-brand-600"></i>
+            <span data-i18n="group_discussion">Group Discussion Chat</span>
+          </h2>
+
+          <div id="chat-messages" class="h-52 overflow-y-auto custom-scrollbar space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <div class="flex space-x-2">
+            <input id="chat-input" type="text" placeholder="Type a message... Press Enter to send" data-i18n-ph="ph_type_message" onkeypress="if(event.key==='Enter') sendChatMessage()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+            <button onclick="sendChatMessage()" class="bg-brand-600 hover:bg-brand-700 text-white w-10 h-10 rounded-xl flex items-center justify-center transition shrink-0 shadow-md shadow-brand-500/20 active:scale-95" data-tip="发送消息" data-tip-key="tip_send_msg">
+              <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: STATS PAGE -->
+      <section id="page-stats" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight" data-i18n="stats_title">Contribution & Performance</h1>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="stats_subtitle">Track team performance, rankings, and activity metrics.</p>
+          </div>
+          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs text-xs">
+            <span class="text-slate-500 font-bold" data-i18n="active_group_label">Active Group:</span>
+            <select id="stats-group-select" onchange="syncActiveGroup(this.value)" class="bg-transparent font-bold text-brand-600 focus:outline-none cursor-pointer">
+              <!-- Dynamic sync -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Banner Overview -->
+        <div class="bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-brand-500/15">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-chart-simple text-xl"></i>
+            <h2 class="text-lg font-bold" data-i18n="group_overview">Group Overview Snapshot</h2>
+          </div>
+          <p class="text-xs text-brand-100 mt-1" data-i18n="multi_metric_desc">Multi-metric team engagement and execution rate</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div class="bg-white/95 backdrop-blur-md text-slate-800 p-4 rounded-2xl shadow-sm">
+              <div class="flex items-center space-x-2 text-brand-600">
+                <i class="fa-solid fa-chart-column"></i>
+                <span class="text-[11px] font-black tracking-wider uppercase text-slate-400" data-i18n="task_volume">Task Volume</span>
+              </div>
+              <div class="text-2xl font-black mt-2"><span id="stats-completed-tasks">1</span> <span class="text-xs font-normal text-slate-400">/ <span id="stats-total-tasks">4</span></span></div>
+              <div class="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
+                <div id="stats-volume-bar" class="bg-brand-500 h-2 rounded-full transition-all duration-500" style="width: 25%"></div>
+              </div>
+            </div>
+
+            <div class="bg-white/95 backdrop-blur-md text-slate-800 p-4 rounded-2xl shadow-sm">
+              <div class="flex items-center space-x-2 text-brand-600">
+                <i class="fa-solid fa-bullseye"></i>
+                <span class="text-[11px] font-black tracking-wider uppercase text-slate-400" data-i18n="ontime_rate">On-Time Rate</span>
+              </div>
+              <div class="flex items-center justify-between mt-2">
+                <div class="text-2xl font-black text-rose-500">25%</div>
+                <div class="text-[10px] text-right font-bold">
+                  <p class="text-emerald-600"><i class="fa-solid fa-check mr-1"></i>1 On-Time</p>
+                  <p class="text-rose-500"><i class="fa-solid fa-xmark mr-1"></i>3 Overdue</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white/95 backdrop-blur-md text-slate-800 p-4 rounded-2xl shadow-sm">
+              <div class="flex items-center space-x-2 text-brand-600">
+                <i class="fa-solid fa-comments"></i>
+                <span class="text-[11px] font-black tracking-wider uppercase text-slate-400" data-i18n="interactions">Team Interactions</span>
+              </div>
+              <div class="text-2xl font-black mt-2" id="stats-interactions-cnt">7</div>
+              <div class="flex items-center space-x-3 text-[10px] font-semibold text-slate-400 mt-2">
+                <span><i class="fa-solid fa-star text-amber-400 mr-1"></i><span id="stats-reviews-count">2</span> Reviews</span>
+                <span><i class="fa-solid fa-message text-brand-500 mr-1"></i><span id="stats-chats-count">3</span> Messages</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Individual Details -->
+        <div>
+          <h3 class="font-black text-sm text-slate-800 mb-3 flex items-center space-x-2">
+            <i class="fa-solid fa-users text-brand-600"></i>
+            <span data-i18n="individual_details">Individual Contribution Breakdown</span>
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="individual-stats-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: HELP PAGE -->
+      <section id="page-help" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900 tracking-tight" data-i18n="help_title">Command Reference & Quick Start</h1>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="help_subtitle">Use shortcuts, quick tips, or actions below to navigate StudyPact efficiently.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-6">
+          <div class="flex items-center space-x-2 text-brand-600 font-bold border-b border-slate-100 pb-3">
+            <i class="fa-solid fa-terminal text-lg"></i>
+            <span class="text-sm tracking-wide" data-i18n="cmd_ref">Quick Action Commands & Navigation Reference</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-200">
+                  <th class="py-3 px-4 w-1/3" data-i18n="th_syntax">Command / Action</th>
+                  <th class="py-3 px-4" data-i18n="th_desc">Description & Behavior Triggered</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs font-mono">
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3 px-4 text-brand-600 font-bold bg-slate-50/30">go to home / homepage</td>
+                  <td class="py-3 px-4 font-sans text-slate-600" data-i18n="cmd_desc_home">Navigate directly to the main workspace dashboard overview.</td>
+                </tr>
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3 px-4 text-brand-600 font-bold bg-slate-50/30">go to tasks / kanban view</td>
+                  <td class="py-3 px-4 font-sans text-slate-600" data-i18n="cmd_desc_tasks">Open the drag-and-drop Task Management Board.</td>
+                </tr>
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3 px-4 text-brand-600 font-bold bg-slate-50/30">enter group [name]</td>
+                  <td class="py-3 px-4 font-sans text-slate-600" data-i18n="cmd_desc_enter_group">Switch context to a specific study group project space.</td>
+                </tr>
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3 px-4 text-brand-600 font-bold bg-slate-50/30">create group [name]</td>
+                  <td class="py-3 px-4 font-sans text-slate-600" data-i18n="cmd_desc_create_group">Open dialog to instantly instantiate a new collaboration group.</td>
+                </tr>
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3 px-4 text-brand-600 font-bold bg-slate-50/30">add task [name]</td>
+                  <td class="py-3 px-4 font-sans text-slate-600" data-i18n="cmd_desc_add_task">Quickly append a task into the group pool with deadline tracking.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: GROUP WORKSPACE -->
+      <section id="page-group-workspace" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div>
+            <div class="flex items-center space-x-3">
+              <span class="w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
+              <h1 id="workspace-title" class="text-2xl font-black text-slate-900 tracking-tight">CS101 Final Project Workspace</h1>
+            </div>
+            <p id="workspace-desc" class="text-xs text-slate-500 mt-1">Dedicated hub for team member assignment, project files, and specific progress.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="openAddMemberModal()" class="bg-brand-50 text-brand-600 hover:bg-brand-100 font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 active:scale-95" data-tip="邀请新成员加入组" data-tip-key="tip_invite_member">
+              <i class="fa-solid fa-user-plus"></i>
+              <span data-i18n="invite_member">Invite Member</span>
+            </button>
+            <button onclick="switchTab('taskboard')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-md shadow-brand-500/20 active:scale-95" data-tip="打开当前小组的任务看板" data-tip-key="tip_open_board">
+              <i class="fa-solid fa-kanban"></i>
+              <span data-i18n="open_board">Open Group Board</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Group Members Overview -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center justify-between">
+            <span class="flex items-center space-x-2">
+              <i class="fa-solid fa-users text-brand-600"></i>
+              <span data-i18n="team_members">Team Members</span>
+            </span>
+            <span id="workspace-member-count-badge" class="text-xs text-slate-400 font-medium">3 Members</span>
+          </h3>
+          <div id="workspace-members-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Dynamic members -->
+          </div>
+        </div>
+
+        <!-- Group Task Summary -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
+          <h3 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-tasks text-brand-600"></i>
+            <span data-i18n="project_tasks_overview">Project Tasks Overview</span>
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th class="py-3 px-4" data-i18n="th_task">Task</th>
+                  <th class="py-3 px-4" data-i18n="th_assignee">Assignee</th>
+                  <th class="py-3 px-4" data-i18n="th_status">Status</th>
+                  <th class="py-3 px-4" data-i18n="th_deadline">Deadline</th>
+                </tr>
+              </thead>
+              <tbody id="workspace-tasks-tbody" class="divide-y divide-slate-100 text-xs font-medium">
+                <!-- Javascript populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Modal 1: Create Group Modal -->
+  <div id="modal-create-group" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-black text-base text-slate-800" data-i18n="modal_create_group_title">Create New Study Group</h3>
+        <button onclick="closeModal('modal-create-group')" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_group_name">Group Name</label>
+          <input type="text" id="new-group-name" placeholder="e.g. MATH202 Midterm Prep" data-i18n-ph="ph_group_name" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_description">Description</label>
+          <textarea id="new-group-desc" placeholder="What is this group working on?" data-i18n-ph="ph_group_desc" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none h-20 resize-none"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeModal('modal-create-group')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmCreateGroup()" class="px-4 py-2 text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition shadow-md shadow-brand-500/20 active:scale-95" data-i18n="btn_create">Create Group</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add Task Modal -->
+  <div id="modal-add-task" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-black text-base text-slate-800" data-i18n="modal_add_task_title">Add New Task</h3>
+        <button onclick="closeModal('modal-add-task')" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_task_title">Task Title</label>
+          <input type="text" id="task-title-input" placeholder="e.g. Write Introduction" data-i18n-ph="ph_task_title" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_assignee">Assignee</label>
+          <select id="task-assignee-select" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+            <option value="11 (you)">11 (you)</option>
+            <option value="Alice Chen">Alice Chen</option>
+            <option value="Bob Smith">Bob Smith</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_deadline">Deadline</label>
+          <input type="date" id="task-deadline-input" value="2026-03-30" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeModal('modal-add-task')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmAddTask()" class="px-4 py-2 text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition shadow-md shadow-brand-500/20 active:scale-95" data-i18n="btn_add_task">Add Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Add Peer Review Modal -->
+  <div id="modal-add-review" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-black text-base text-slate-800" data-i18n="modal_review_title">Submit Peer Review</h3>
+        <button onclick="closeModal('modal-add-review')" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_target_member">Review Target Member</label>
+          <select id="review-target-select" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+            <option value="Alice Chen">Alice Chen</option>
+            <option value="Bob Smith">Bob Smith</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_rating">Rating</label>
+          <select id="review-stars-select" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+            <option value="5">5 Stars (Excellent)</option>
+            <option value="4">4 Stars (Good)</option>
+            <option value="3">3 Stars (Average)</option>
+            <option value="2">2 Stars (Needs Improvement)</option>
+            <option value="1">1 Star (Poor)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_comments">Comments</label>
+          <textarea id="review-comment-input" placeholder="Feedback on contribution, teamwork, timeliness..." data-i18n-ph="ph_comments" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none h-20 resize-none"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeModal('modal-add-review')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmAddReview()" class="px-4 py-2 text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition shadow-md shadow-brand-500/20 active:scale-95" data-i18n="btn_submit">Submit Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Invite Member Modal -->
+  <div id="modal-add-member" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 border border-slate-100">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-black text-base text-slate-800" data-i18n="modal_member_title">Invite Group Member</h3>
+        <button onclick="closeModal('modal-add-member')" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_member_name">Member Name</label>
+          <input type="text" id="member-name-input" placeholder="e.g. David Wright" data-i18n-ph="ph_member_name" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1" data-i18n="lbl_role">Role</label>
+          <input type="text" id="member-role-input" placeholder="e.g. Designer / Developer" data-i18n-ph="ph_role" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeModal('modal-add-member')" class="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmAddMember()" class="px-4 py-2 text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition shadow-md shadow-brand-500/20 active:scale-95" data-i18n="btn_add">Add Member</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Internationalization (I18N) Dictionaries
+    const i18n = {
+      en: {
+        slogan: "Work Smarter, Not Harder",
+        notifications: "Notifications",
+        clear_all: "Clear all",
+        group_owner: "Group Owner",
+        profile: "Profile",
+        settings: "Settings",
+        my_badges: "My Badges",
+        logout: "Logout",
+        nav_main: "Main Menu",
+        nav_home: "Home",
+        nav_taskboard: "Task Board",
+        nav_submissions: "Submissions",
+        nav_stats: "Stats",
+        nav_help: "Help",
+        nav_my_groups: "My Groups",
+        new_group: "New Group",
+        welcome_title: "Welcome back, 11!",
+        welcome_subtitle: "Here's your group activity overview.",
+        stat_groups: "Groups",
+        stat_total_tasks: "Total Tasks",
+        stat_completed: "Completed",
+        stat_members: "Members",
+        go_create: "Go / Create",
+        active_groups: "Active Study Groups",
+        all_tasks: "All Tasks Overview",
+        th_task: "Task",
+        th_group: "Group",
+        th_assignee: "Assignee",
+        th_deadline: "Deadline",
+        th_status: "Status",
+        recent_alerts: "Recent System Alerts",
+        user_role: "Owner / Student",
+        taskboard_title: "Task Management Board",
+        taskboard_subtitle: "Drag tasks from the pool into status columns, or create new ones.",
+        active_group_label: "Active Group:",
+        add_task: "Add Task",
+        task_pool: "Task Pool",
+        col_pending: "Pending",
+        col_inprogress: "In Progress",
+        col_completed: "Completed",
+        submissions_title: "Submissions & Review",
+        submissions_subtitle: "Upload group deliverables, perform peer reviews, and discuss.",
+        drag_files_here: "Drag & drop files here, or click to browse",
+        supported_formats: "Supports PDF, DOCX, ZIP, PNG, MP4 up to 50MB",
+        choose_files: "Choose Files",
+        uploaded_files: "Uploaded Files",
+        sub_deadline_label: "Submission Deadline:",
+        btn_set: "Set",
+        peer_reviews: "Peer Reviews & Feedback",
+        add_review: "Add Review",
+        group_discussion: "Group Discussion Chat",
+        stats_title: "Contribution & Performance",
+        stats_subtitle: "Track team performance, rankings, and activity metrics.",
+        group_overview: "Group Overview Snapshot",
+        multi_metric_desc: "Multi-metric team engagement and execution rate",
+        task_volume: "Task Volume",
+        ontime_rate: "On-Time Rate",
+        interactions: "Team Interactions",
+        individual_details: "Individual Contribution Breakdown",
+        help_title: "Command Reference & Quick Start",
+        help_subtitle: "Use shortcuts, quick tips, or actions below to navigate StudyPact efficiently.",
+        cmd_ref: "Quick Action Commands & Navigation Reference",
+        th_syntax: "Command / Action",
+        th_desc: "Description & Behavior Triggered",
+        cmd_desc_home: "Navigate directly to the main workspace dashboard overview.",
+        cmd_desc_tasks: "Open the drag-and-drop Task Management Board.",
+        cmd_desc_enter_group: "Switch context to a specific study group project space.",
+        cmd_desc_create_group: "Open dialog to instantly instantiate a new collaboration group.",
+        cmd_desc_add_task: "Quickly append a task into the group pool with deadline tracking.",
+        invite_member: "Invite Member",
+        open_board: "Open Group Board",
+        team_members: "Team Members",
+        project_tasks_overview: "Project Tasks Overview",
+        modal_create_group_title: "Create New Study Group",
+        lbl_group_name: "Group Name",
+        lbl_description: "Description",
+        btn_cancel: "Cancel",
+        btn_create: "Create Group",
+        modal_add_task_title: "Add New Task",
+        lbl_task_title: "Task Title",
+        lbl_assignee: "Assignee",
+        lbl_deadline: "Deadline",
+        btn_add_task: "Add Task",
+        modal_review_title: "Submit Peer Review",
+        lbl_target_member: "Review Target Member",
+        lbl_rating: "Rating",
+        lbl_comments: "Comments",
+        btn_submit: "Submit Review",
+        modal_member_title: "Invite Group Member",
+        lbl_member_name: "Member Name",
+        lbl_role: "Role",
+        btn_add: "Add Member",
+        ph_quick_group: "Enter or create a group...",
+        ph_filter_tasks: "Filter tasks...",
+        ph_type_message: "Type a message... Press Enter to send",
+        ph_group_name: "e.g. MATH202 Midterm Prep",
+        ph_group_desc: "What is this group working on?",
+        ph_task_title: "e.g. Write Introduction",
+        ph_comments: "Feedback on contribution, teamwork, timeliness...",
+        ph_member_name: "e.g. David Wright",
+        ph_role: "e.g. Designer / Developer",
+        notif_warning_alice: "Warning: Alice Chen inactive for 7+ days.",
+        notif_task_done: "Bob completed Database Schema Setup.",
+        // Quick tips Dictionaries
+        tip_go_home: "Back to Home Overview",
+        tip_clock: "Local Real System Time",
+        tip_toggle_lang: "Switch EN / 中文 Language",
+        tip_notif: "View Notifications",
+        tip_profile: "User Profile Center",
+        tip_toggle_sidebar: "Collapse / Expand Sidebar",
+        tip_nav_home: "Go to Dashboard Overview",
+        tip_nav_taskboard: "Drag & Drop Task Management",
+        tip_nav_submissions: "Submissions, Reviews & Chat",
+        tip_nav_stats: "Contribution Analysis & Stats",
+        tip_nav_help: "Guide & Commands Reference",
+        tip_new_group: "Create a new study group",
+        tip_go_create: "Enter existing group or create new",
+        tip_add_task: "Create a new task",
+        tip_upload_zone: "Click or drag files here to upload",
+        tip_set_deadline: "Update submission deadline date",
+        tip_add_review: "Write review for team members",
+        tip_send_msg: "Send chat message",
+        tip_invite_member: "Invite new member to group",
+        tip_open_board: "Open current group board"
+      },
+      zh: {
+        slogan: "高效学习，事半功倍",
+        notifications: "通知消息",
+        clear_all: "清空全部",
+        group_owner: "小组创建者",
+        profile: "个人资料",
+        settings: "系统设置",
+        my_badges: "我的勋章",
+        logout: "退出登录",
+        nav_main: "主菜单",
+        nav_home: "工作台主页",
+        nav_taskboard: "任务看板",
+        nav_submissions: "提交与互评",
+        nav_stats: "数据统计",
+        nav_help: "使用指南",
+        nav_my_groups: "我的学习小组",
+        new_group: "新建小组",
+        welcome_title: "欢迎回来，11！",
+        welcome_subtitle: "以下是您的学习小组实时活动概览。",
+        stat_groups: "加入小组",
+        stat_total_tasks: "总任务数",
+        stat_completed: "已完成任务",
+        stat_members: "小组成员数",
+        go_create: "前往 / 创建",
+        active_groups: "进行中的学习小组",
+        all_tasks: "所有任务列表概览",
+        th_task: "任务名称",
+        th_group: "所属小组",
+        th_assignee: "负责人",
+        th_deadline: "截止日期",
+        th_status: "当前状态",
+        recent_alerts: "最近系统预警通知",
+        user_role: "房主 / 学生",
+        taskboard_title: "任务看板管理",
+        taskboard_subtitle: "可将任务从任务池拖拽至各状态列，或在此创建新任务。",
+        active_group_label: "当前选择小组：",
+        add_task: "添加新任务",
+        task_pool: "待分配任务池",
+        col_pending: "等待处理 (Pending)",
+        col_inprogress: "进行中 (In Progress)",
+        col_completed: "已完成 (Completed)",
+        submissions_title: "作业提交与同伴互评",
+        submissions_subtitle: "上传小组产出文件，开展组员互评及即时讨论。",
+        drag_files_here: "拖拽文件至此处上传，或点击浏览文件",
+        supported_formats: "支持 PDF, DOCX, ZIP, PNG, MP4 等格式 (最大 50MB)",
+        choose_files: "选择本地文件",
+        uploaded_files: "已上传的小组文件",
+        sub_deadline_label: "作业提交截止时间：",
+        btn_set: "保存设置",
+        peer_reviews: "组员同伴互评反馈",
+        add_review: "撰写互评",
+        group_discussion: "小组讨论区",
+        stats_title: "团队贡献度与数据统计",
+        stats_subtitle: "追踪团队完成度、排名及组员多维度的活跃度。",
+        group_overview: "小组整体绩效快照",
+        multi_metric_desc: "多维度的团队参与度与任务执行率指标",
+        task_volume: "任务完成率",
+        ontime_rate: "按时完成率",
+        interactions: "团队互动数",
+        individual_details: "组员个人贡献明细",
+        help_title: "快捷指令与使用帮助",
+        help_subtitle: "使用快捷键、悬浮提示或下方指令快速掌握 StudyPact 的高效操作。",
+        cmd_ref: "快捷指令与导航索引列表",
+        th_syntax: "指令语法 / 操作",
+        th_desc: "功能说明与触发行为",
+        cmd_desc_home: "直接跳转至主页工作台控制面板概览。",
+        cmd_desc_tasks: "打开支持拖拽交互的任务管理看板。",
+        cmd_desc_enter_group: "切换并进入特定的学习小组项目空间。",
+        cmd_desc_create_group: "弹窗并快速建立一个新的协作学习小组。",
+        cmd_desc_add_task: "快速向当前小组的任务池追加一个追踪项。",
+        invite_member: "邀请新成员",
+        open_board: "打开小组看板",
+        team_members: "小组成员列表",
+        project_tasks_overview: "项目任务列表概览",
+        modal_create_group_title: "新建学习小组",
+        lbl_group_name: "小组名称",
+        lbl_description: "小组简介 / 目标",
+        btn_cancel: "取消",
+        btn_create: "确认创建",
+        modal_add_task_title: "新建任务项",
+        lbl_task_title: "任务标题",
+        lbl_assignee: "执行负责人",
+        lbl_deadline: "截止时间",
+        btn_add_task: "确认添加",
+        modal_review_title: "提交同伴互评",
+        lbl_target_member: "被评价组员",
+        lbl_rating: "评分 (星级)",
+        lbl_comments: "评语与建议",
+        btn_submit: "提交评价",
+        modal_member_title: "邀请新成员加入",
+        lbl_member_name: "成员姓名",
+        lbl_role: "团队分工 / 角色",
+        btn_add: "确认添加",
+        ph_quick_group: "输入或创建小组名称...",
+        ph_filter_tasks: "输入关键字检索任务...",
+        ph_type_message: "输入消息... 按 Enter 发送",
+        ph_group_name: "例如: 高等数学期末备考组",
+        ph_group_desc: "本小组的主要研究目标或分工说明...",
+        ph_task_title: "例如: 完成第三章文献综述",
+        ph_comments: "关于工作态度、完成质量、沟通效率的评语...",
+        ph_member_name: "例如: 张伟",
+        ph_role: "例如: 页面设计 / 后端开发",
+        notif_warning_alice: "预警：Alice Chen 已连续 7 天未活动。",
+        notif_task_done: "Bob 刚刚完成了数据库 Schema 设计任务。",
+        // Quick tips Dictionaries
+        tip_go_home: "返回主页概览",
+        tip_clock: "本地系统实时时间",
+        tip_toggle_lang: "切换中/英文语言",
+        tip_notif: "查看通知消息",
+        tip_profile: "用户个人中心",
+        tip_toggle_sidebar: "折叠/展开侧边栏",
+        tip_nav_home: "返回主页控制台",
+        tip_nav_taskboard: "拖拽管理任务面板",
+        tip_nav_submissions: "文件上传与组员互评",
+        tip_nav_stats: "团队贡献度与数据统计",
+        tip_nav_help: "指令指南与帮助说明",
+        tip_new_group: "创建一个新的学习小组",
+        tip_go_create: "直达小组或创建新小组",
+        tip_add_task: "创建新任务",
+        tip_upload_zone: "点击或将文件拖拽至此处上传",
+        tip_set_deadline: "更新提交截止时间",
+        tip_add_review: "对小组成员撰写评价",
+        tip_send_msg: "发送消息",
+        tip_invite_member: "邀请新成员加入组",
+        tip_open_board: "打开当前小组的任务看板"
+      }
+    };
+
+    // Global State
+    const state = {
+      lang: 'zh', // 'en' or 'zh'
+      sidebarCollapsed: false,
+      activeTab: 'home',
+      activeGroup: 'CS101 Final Project',
+      groups: [
+        {
+          id: 'cs101',
+          name: 'CS101 Final Project',
+          desc: 'Comprehensive group project focusing on algorithms & software design.',
+          members: [
+            { name: '11 (you)', role: 'OWNER', tasks: '1/2', delays: '2', reviews: '1/4', hours: '6h', score: '10 pts' },
+            { name: 'Alice Chen', role: 'MEMBER', tasks: '0/1', delays: '1', reviews: '2/4', hours: '3h', score: '12 pts' },
+            { name: 'Bob Smith', role: 'MEMBER', tasks: '0/1', delays: '1', reviews: '1/0', hours: '5h', score: '7 pts' }
+          ],
+          tasks: [
+            { id: 1, title: 'Literature Review', assignee: '11 (you)', deadline: '2026-03-15', status: 'Completed', estHours: 4 },
+            { id: 2, title: 'UI Wireframes & Mockups', assignee: 'Alice Chen', deadline: '2026-03-18', status: 'Pending', estHours: 6 },
+            { id: 3, title: 'Database Schema Setup', assignee: 'Bob Smith', deadline: '2026-03-22', status: 'Pending', estHours: 5 },
+            { id: 4, title: 'Frontend Integration', assignee: '11 (you)', deadline: '2026-03-25', status: 'In Progress', estHours: 8 }
+          ],
+          files: [
+            { name: 'Project_Proposal_v2.pdf', size: '2.4 MB', uploader: '11', date: '2026-03-01' },
+            { name: 'System_Architecture_Diagram.png', size: '1.1 MB', uploader: 'Bob Smith', date: '2026-03-05' }
+          ],
+          reviews: [
+            { author: '11', target: 'Alice Chen', stars: 4, comment: 'Great job handling literature review sources!' },
+            { author: 'Bob Smith', target: '11', stars: 5, comment: 'Lead the team efficiently and set up repository.' }
+          ],
+          chats: [
+            { sender: 'Alice Chen', time: '02:23 PM', text: 'I uploaded the references doc, please review!' },
+            { sender: 'Bob Smith', time: '02:25 PM', text: '@Alice Chen looks good, I left a review.' },
+            { sender: '11', time: '02:30 PM', text: 'Great progress everyone. Let us finalize by Friday.' }
+          ]
+        }
+      ]
+    };
+
+    // UI Helper: Toast Notifications
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : type === 'warning' ? 'bg-amber-500 text-white' : 'bg-slate-900 text-white';
+      
+      toast.className = `${bgClass} pointer-events-auto px-4 py-2.5 rounded-xl shadow-xl text-xs font-bold flex items-center space-x-2 animate-in fade-in slide-in-from-top-2 duration-200`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i><span>${msg}</span>`;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    // Toggle Language Function
+    function toggleLanguage() {
+      state.lang = state.lang === 'zh' ? 'en' : 'zh';
+      applyLanguage();
+      showToast(state.lang === 'zh' ? '已切换至中文界面' : 'Language switched to English', 'success');
+    }
+
+    function applyLanguage() {
+      const langData = i18n[state.lang];
+      document.getElementById('lang-text').innerText = state.lang === 'zh' ? '中文 / EN' : 'EN / 中文';
+      
+      // Update text nodes
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (langData[key]) el.innerText = langData[key];
+      });
+
+      // Update placeholders
+      document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (langData[key]) el.placeholder = langData[key];
+      });
+
+      // Update Tooltips (Quick Tips)
+      document.querySelectorAll('[data-tip-key]').forEach(el => {
+        const key = el.getAttribute('data-tip-key');
+        if (langData[key]) el.setAttribute('data-tip', langData[key]);
+      });
+
+      renderAllViews();
+    }
+
+    // Toggle Sidebar Collapse
+    function toggleSidebarCollapse() {
+      state.sidebarCollapsed = !state.sidebarCollapsed;
+      const sidebar = document.getElementById('sidebar-panel');
+      const icon = document.getElementById('sidebar-toggle-icon');
+      
+      if (state.sidebarCollapsed) {
+        sidebar.classList.remove('w-64');
+        sidebar.classList.add('w-20');
+        document.querySelectorAll('.nav-text').forEach(el => el.classList.add('hidden'));
+        icon.className = 'fa-solid fa-angles-right';
+      } else {
+        sidebar.classList.remove('w-20');
+        sidebar.classList.add('w-64');
+        document.querySelectorAll('.nav-text').forEach(el => el.classList.remove('hidden'));
+        icon.className = 'fa-solid fa-angles-left';
+      }
+    }
+
+    // Real live system clock
+    function updateLiveClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const month = months[now.getMonth()];
+      const day = now.getDate();
+      
+      const timeStr = `${hours}:${minutes}:${seconds} ${month} ${day}`;
+      const clockEl = document.getElementById('live-timer');
+      if (clockEl) clockEl.innerText = timeStr;
+    }
+    setInterval(updateLiveClock, 1000);
+    updateLiveClock();
+
+    // Tab Navigation Logic
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      
+      // Reset sidebar active UI
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('text-brand-600', 'bg-brand-50/80');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeBtn = document.getElementById(`nav-${tabId}`);
+      if (activeBtn) activeBtn.classList.add('text-brand-600', 'bg-brand-50/80');
+
+      const pageEl = document.getElementById(`page-${tabId}`);
+      if (pageEl) pageEl.classList.remove('hidden');
+
+      renderAllViews();
+    }
+
+    // Sync active group across selectors
+    function syncActiveGroup(groupName) {
+      state.activeGroup = groupName;
+      renderAllViews();
+      showToast(`${i18n[state.lang].active_group_label} ${groupName}`);
+    }
+
+    function getCurrentGroup() {
+      return state.groups.find(g => g.name === state.activeGroup) || state.groups[0];
+    }
+
+    function openGroupWorkspace(groupName) {
+      state.activeGroup = groupName;
+      switchTab('group-workspace');
+    }
+
+    // Modal Controls
+    function openCreateGroupModal() { document.getElementById('modal-create-group').classList.remove('hidden'); }
+    function openAddTaskModal() { document.getElementById('modal-add-task').classList.remove('hidden'); }
+    function openPeerReviewModal() { document.getElementById('modal-add-review').classList.remove('hidden'); }
+    function openAddMemberModal() { document.getElementById('modal-add-member').classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // Group Creation
+    function confirmCreateGroup() {
+      const nameInput = document.getElementById('new-group-name');
+      const descInput = document.getElementById('new-group-desc');
+      const name = nameInput.value.trim();
+      if (!name) return showToast('Please enter a group name', 'warning');
+
+      const newGroup = {
+        id: 'group-' + Date.now(),
+        name: name,
+        desc: descInput.value.trim() || 'No description provided.',
+        members: [
+          { name: '11 (you)', role: 'OWNER', tasks: '0/0', delays: '0', reviews: '0/0', hours: '0h', score: '0 pts' }
+        ],
+        tasks: [],
+        files: [],
+        reviews: [],
+        chats: [
+          { sender: 'System', time: 'Just now', text: 'Group created successfully!' }
+        ]
+      };
+
+      state.groups.push(newGroup);
+      state.activeGroup = name;
+      nameInput.value = '';
+      descInput.value = '';
+      closeModal('modal-create-group');
+      renderAllViews();
+      showToast(`Group "${name}" created!`, 'success');
+    }
+
+    function handleQuickGroupSubmit() {
+      const input = document.getElementById('quick-group-input');
+      const val = input.value.trim();
+      if (!val) return;
+      const existing = state.groups.find(g => g.name.toLowerCase() === val.toLowerCase());
+      if (existing) {
+        openGroupWorkspace(existing.name);
+      } else {
+        document.getElementById('new-group-name').value = val;
+        openCreateGroupModal();
+      }
+      input.value = '';
+    }
+
+    function confirmAddTask() {
+      const title = document.getElementById('task-title-input').value.trim();
+      const assignee = document.getElementById('task-assignee-select').value;
+      const deadline = document.getElementById('task-deadline-input').value;
+      if (!title) return showToast('Task title is required', 'warning');
+
+      const currentGroup = getCurrentGroup();
+      currentGroup.tasks.push({
+        id: Date.now(),
+        title: title,
+        assignee: assignee,
+        deadline: deadline,
+        status: 'Pending',
+        estHours: 3
+      });
+
+      document.getElementById('task-title-input').value = '';
+      closeModal('modal-add-task');
+      renderAllViews();
+      showToast('New task added to pool', 'success');
+    }
+
+    function confirmAddReview() {
+      const target = document.getElementById('review-target-select').value;
+      const stars = parseInt(document.getElementById('review-stars-select').value);
+      const comment = document.getElementById('review-comment-input').value.trim();
+
+      const currentGroup = getCurrentGroup();
+      currentGroup.reviews.push({
+        author: '11',
+        target: target,
+        stars: stars,
+        comment: comment || 'Great team member performance.'
+      });
+
+      document.getElementById('review-comment-input').value = '';
+      closeModal('modal-add-review');
+      renderAllViews();
+      showToast('Peer review submitted!', 'success');
+    }
+
+    function confirmAddMember() {
+      const name = document.getElementById('member-name-input').value.trim();
+      const role = document.getElementById('member-role-input').value.trim();
+      if (!name) return showToast('Member name required', 'warning');
+
+      const currentGroup = getCurrentGroup();
+      currentGroup.members.push({
+        name: name,
+        role: (role || 'MEMBER').toUpperCase(),
+        tasks: '0/0',
+        delays: '0',
+        reviews: '0/0',
+        hours: '0h',
+        score: '0 pts'
+      });
+
+      document.getElementById('member-name-input').value = '';
+      document.getElementById('member-role-input').value = '';
+      closeModal('modal-add-member');
+      renderAllViews();
+      showToast(`Member ${name} added!`, 'success');
+    }
+
+    // Drag & Drop Task Interactive Visual Handlers
+    let draggedTaskId = null;
+    function dragTask(event, taskId) {
+      draggedTaskId = taskId;
+      event.dataTransfer.setData('text/plain', taskId);
+      event.target.classList.add('opacity-40', 'scale-95');
+    }
+
+    function allowDrop(event) { event.preventDefault(); }
+    
+    function dragEnter(event) {
+      event.preventDefault();
+      const col = event.currentTarget;
+      col.classList.add('ring-2', 'ring-brand-500/50', 'bg-brand-50/30');
+    }
+
+    function dragLeave(event) {
+      const col = event.currentTarget;
+      col.classList.remove('ring-2', 'ring-brand-500/50', 'bg-brand-50/30');
+    }
+
+    function dropTask(event, newStatus) {
+      event.preventDefault();
+      const col = event.currentTarget;
+      col.classList.remove('ring-2', 'ring-brand-500/50', 'bg-brand-50/30');
+
+      if (!draggedTaskId) return;
+      const currentGroup = getCurrentGroup();
+      const task = currentGroup.tasks.find(t => t.id === draggedTaskId);
+      if (task) {
+        task.status = newStatus;
+        renderAllViews();
+        showToast(`Task moved to ${newStatus}`, 'success');
+      }
+      draggedTaskId = null;
+    }
+
+    // File Selection Handler
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (!files.length) return;
+      const currentGroup = getCurrentGroup();
+      for (let i = 0; i < files.length; i++) {
+        currentGroup.files.push({
+          name: files[i].name,
+          size: (files[i].size / (1024*1024)).toFixed(1) + ' MB',
+          uploader: '11',
+          date: new Date().toISOString().split('T')[0]
+        });
+      }
+      renderAllViews();
+      showToast(`${files.length} file(s) uploaded`, 'success');
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      const currentGroup = getCurrentGroup();
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      currentGroup.chats.push({
+        sender: '11',
+        time: timeStr,
+        text: text
+      });
+      input.value = '';
+      renderAllViews();
+    }
+
+    function updateSubmissionDeadline() {
+      const pickerVal = document.getElementById('submission-deadline-picker').value;
+      const statusEl = document.getElementById('submission-deadline-status');
+      statusEl.innerText = `${pickerVal} (Updated)`;
+      statusEl.className = "text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-xl";
+      showToast('Deadline updated!', 'success');
+    }
+
+    // Dropdowns Toggle
+    function toggleNotifDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('notif-dropdown').classList.toggle('hidden');
+      document.getElementById('profile-dropdown').classList.add('hidden');
+    }
+    function toggleProfileDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('profile-dropdown').classList.toggle('hidden');
+      document.getElementById('notif-dropdown').classList.add('hidden');
+    }
+    window.onclick = function() {
+      document.getElementById('notif-dropdown').classList.add('hidden');
+      document.getElementById('profile-dropdown').classList.add('hidden');
+    }
+
+    function clearNotifications() {
+      document.getElementById('notif-list').innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No new notifications</p>`;
+      document.getElementById('notif-badge').classList.add('hidden');
+      showToast('Notifications cleared');
+    }
+
+    function filterTaskPool() {
+      const query = document.getElementById('pool-search-input').value.toLowerCase();
+      document.querySelectorAll('#task-pool-container > div').forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(query) ? 'block' : 'none';
+      });
+    }
+
+    // MAIN RENDER FUNCTION
+    function renderAllViews() {
+      const currentGroup = getCurrentGroup();
+
+      // 1. Render Sidebar My Groups
+      const sidebarGroupsList = document.getElementById('sidebar-groups-list');
+      sidebarGroupsList.innerHTML = state.groups.map(g => `
+        <button onclick="openGroupWorkspace('${g.name}')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold ${g.name === state.activeGroup ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-slate-100/80'} transition" data-tip="${g.name}" data-tip-pos="right">
+          <span class="truncate flex items-center"><i class="fa-solid fa-folder text-brand-500 mr-2.5"></i> <span class="nav-text ${state.sidebarCollapsed ? 'hidden' : ''}">${g.name}</span></span>
+          <span class="text-[10px] bg-slate-200/80 text-slate-600 px-1.5 py-0.2 rounded-full font-bold ${state.sidebarCollapsed ? 'hidden' : ''}">${g.members.length}</span>
+        </button>
+      `).join('');
+
+      // 2. Sync Select Dropdowns
+      ['taskboard-group-select', 'submissions-group-select', 'stats-group-select'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) {
+          sel.innerHTML = state.groups.map(g => `<option value="${g.name}" ${g.name === state.activeGroup ? 'selected' : ''}>${g.name}</option>`).join('');
+        }
+      });
+
+      // 3. Render Home Stats & Group Cards
+      let totalTasksCount = 0;
+      let totalCompletedCount = 0;
+      let totalMembersSet = new Set();
+
+      state.groups.forEach(g => {
+        totalTasksCount += g.tasks.length;
+        totalCompletedCount += g.tasks.filter(t => t.status === 'Completed').length;
+        g.members.forEach(m => totalMembersSet.add(m.name));
+      });
+
+      document.getElementById('stat-groups-cnt').innerText = state.groups.length;
+      document.getElementById('stat-tasks-cnt').innerText = totalTasksCount;
+      document.getElementById('stat-completed-cnt').innerText = totalCompletedCount;
+      document.getElementById('stat-members-cnt').innerText = totalMembersSet.size;
+
+      const homeGroupsGrid = document.getElementById('home-groups-grid');
+      homeGroupsGrid.innerHTML = state.groups.map(g => {
+        const comp = g.tasks.filter(t => t.status === 'Completed').length;
+        const total = g.tasks.length;
+        const pct = total > 0 ? Math.round((comp / total) * 100) : 0;
+        return `
+          <div onclick="openGroupWorkspace('${g.name}')" class="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-500 hover:shadow-card-hover cursor-pointer transition-all duration-200 relative group flex flex-col justify-between" data-tip="进入 ${g.name} 项目空间">
+            <div>
+              <h3 class="font-bold text-sm text-slate-900 group-hover:text-brand-600 transition truncate">${g.name}</h3>
+              <p class="text-[11px] text-slate-400 mt-1 line-clamp-2 font-medium">${g.desc}</p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-semibold mb-1.5">
+                <span><i class="fa-solid fa-users mr-1"></i>${g.members.length}</span>
+                <span><i class="fa-solid fa-list-check mr-1"></i>${g.tasks.length}</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-brand-500 h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+              <span class="text-[10px] font-extrabold text-slate-400 mt-1 block text-right">${pct}%</span>
+            </div>
+          </div>
+        `;
+      }).join('') + `
+        <button onclick="openCreateGroupModal()" class="border-2 border-dashed border-slate-200/80 rounded-2xl p-4 flex flex-col items-center justify-center text-slate-400 hover:border-brand-400 hover:text-brand-500 hover:bg-brand-50/20 transition-all h-36 active:scale-95 group" data-tip="点击创建新小组">
+          <i class="fa-solid fa-plus text-xl mb-1 group-hover:scale-125 transition-transform"></i>
+          <span class="text-xs font-bold" data-i18n="new_group">New Group</span>
+        </button>
+      `;
+
+      // 4. Render Home All Tasks Table
+      const allTasksTbody = document.getElementById('home-tasks-tbody');
+      let allTasksHtml = '';
+      state.groups.forEach(g => {
+        g.tasks.forEach(t => {
+          let badgeColor = 'bg-amber-100 text-amber-800';
+          if (t.status === 'In Progress') badgeColor = 'bg-blue-100 text-blue-800';
+          if (t.status === 'Completed') badgeColor = 'bg-emerald-100 text-emerald-800';
+
+          allTasksHtml += `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="py-3.5 px-4 font-bold text-slate-800">${t.title}</td>
+              <td class="py-3.5 px-4 text-slate-500"><span class="bg-slate-100 px-2 py-0.5 rounded-md text-[10px] font-bold text-slate-600">${g.name}</span></td>
+              <td class="py-3.5 px-4 text-slate-600">${t.assignee}</td>
+              <td class="py-3.5 px-4 font-mono text-slate-500">${t.deadline}</td>
+              <td class="py-3.5 px-4"><span class="${badgeColor} px-2.5 py-0.5 rounded-full font-extrabold text-[10px]">${t.status}</span></td>
+            </tr>
+          `;
+        });
+      });
+      allTasksTbody.innerHTML = allTasksHtml || `<tr><td colspan="5" class="py-6 text-center text-slate-400 font-medium">No tasks created yet</td></tr>`;
+
+      // 5. Render Task Board Kanban
+      const poolContainer = document.getElementById('task-pool-container');
+      const colPending = document.getElementById('col-pending');
+      const colInprogress = document.getElementById('col-inprogress');
+      const colCompleted = document.getElementById('col-completed');
+
+      poolContainer.innerHTML = '';
+      colPending.innerHTML = '';
+      colInprogress.innerHTML = '';
+      colCompleted.innerHTML = '';
+
+      let pendingCnt = 0, inprogressCnt = 0, completedCnt = 0;
+
+      currentGroup.tasks.forEach(t => {
+        const cardHtml = `
+          <div draggable="true" ondragstart="dragTask(event, ${t.id})" class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs cursor-grab active:cursor-grabbing hover:border-brand-400 hover:shadow-card-hover transition-all space-y-2 group" data-tip="按住拖拽更改任务状态">
+            <div class="flex justify-between items-start">
+              <h4 class="font-bold text-xs text-slate-900 group-hover:text-brand-600 transition">${t.title}</h4>
+              <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded-md">${t.estHours}h</span>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-slate-400 font-medium pt-1.5 border-t border-slate-100">
+              <span><i class="fa-regular fa-user mr-1 text-slate-400"></i>${t.assignee}</span>
+              <span class="font-mono text-slate-500">${t.deadline}</span>
+            </div>
+          </div>
+        `;
+
+        poolContainer.innerHTML += cardHtml;
+
+        if (t.status === 'Pending') {
+          colPending.innerHTML += cardHtml;
+          pendingCnt++;
+        } else if (t.status === 'In Progress') {
+          colInprogress.innerHTML += cardHtml;
+          inprogressCnt++;
+        } else if (t.status === 'Completed') {
+          colCompleted.innerHTML += cardHtml;
+          completedCnt++;
+        }
+      });
+
+      document.getElementById('pool-count-badge').innerText = `${currentGroup.tasks.length} tasks`;
+      document.getElementById('pending-count').innerText = pendingCnt;
+      document.getElementById('inprogress-count').innerText = inprogressCnt;
+      document.getElementById('completed-count').innerText = completedCnt;
+
+      // 6. Render Submissions (Files, Peer Reviews, Chat)
+      const filesContainer = document.getElementById('uploaded-files-container');
+      filesContainer.innerHTML = currentGroup.files.map(f => `
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-brand-300 transition">
+          <div class="flex items-center space-x-3 overflow-hidden">
+            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 font-bold">
+              <i class="fa-regular fa-file-lines text-lg"></i>
+            </div>
+            <div class="truncate">
+              <p class="font-bold text-xs text-slate-800 truncate">${f.name}</p>
+              <p class="text-[10px] text-slate-400 font-medium mt-0.5">${f.size} · ${f.uploader}</p>
+            </div>
+          </div>
+          <button class="text-slate-400 hover:text-brand-600 p-2 transition rounded-xl hover:bg-slate-50" data-tip="下载此文件"><i class="fa-solid fa-download"></i></button>
+        </div>
+      `).join('') || `<p class="text-xs text-slate-400 col-span-3 text-center py-6 font-medium">No files uploaded yet.</p>`;
+
+      const reviewsList = document.getElementById('peer-reviews-list');
+      reviewsList.innerHTML = currentGroup.reviews.map(r => `
+        <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 text-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="font-black text-slate-900">${r.author}</span>
+              <i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+              <span class="font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md">${r.target}</span>
+            </div>
+            <div class="text-amber-400 text-[10px] flex gap-0.5">
+              ${'<i class="fa-solid fa-star"></i>'.repeat(r.stars)}
+            </div>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">${r.comment}</p>
+        </div>
+      `).join('') || `<p class="text-xs text-slate-400 text-center py-6 font-medium">No reviews submitted yet.</p>`;
+
+      const chatContainer = document.getElementById('chat-messages');
+      chatContainer.innerHTML = currentGroup.chats.map(c => `
+        <div class="flex flex-col text-xs ${c.sender === '11' ? 'items-end' : ''}">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-700">${c.sender}</span>
+            <span class="text-[10px] text-slate-400 font-mono">${c.time}</span>
+          </div>
+          <p class="${c.sender === '11' ? 'text-white bg-slate-900 shadow-xs' : 'text-slate-700 bg-white border border-slate-200/80 shadow-xs'} p-2.5 rounded-2xl mt-1 max-w-md font-medium leading-relaxed">
+            ${c.text}
+          </p>
+        </div>
+      `).join('');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      // 7. Render Stats View
+      document.getElementById('stats-completed-tasks').innerText = completedCnt;
+      document.getElementById('stats-total-tasks').innerText = currentGroup.tasks.length;
+      const volPct = currentGroup.tasks.length ? Math.round((completedCnt / currentGroup.tasks.length) * 100) : 0;
+      document.getElementById('stats-volume-bar').style.width = volPct + '%';
+      document.getElementById('stats-reviews-count').innerText = currentGroup.reviews.length;
+      document.getElementById('stats-chats-count').innerText = currentGroup.chats.length;
+      document.getElementById('stats-interactions-cnt').innerText = currentGroup.reviews.length + currentGroup.chats.length;
+
+      const individualGrid = document.getElementById('individual-stats-grid');
+      individualGrid.innerHTML = currentGroup.members.map(m => `
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+          <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white font-black flex items-center justify-center text-xs shadow-md shadow-brand-500/20">
+              ${m.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 text-xs">${m.name}</h4>
+              <span class="text-[9px] bg-brand-50 text-brand-600 font-extrabold px-2 py-0.5 rounded-full">${m.role}</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-medium">
+            <div class="bg-slate-50 p-2 rounded-xl"><span class="text-slate-400 block text-[10px]">Tasks Completed</span><span class="font-bold text-slate-800">${m.tasks}</span></div>
+            <div class="bg-slate-50 p-2 rounded-xl"><span class="text-slate-400 block text-[10px]">Delays</span><span class="font-bold text-rose-500">${m.delays}</span></div>
+            <div class="bg-slate-50 p-2 rounded-xl"><span class="text-slate-400 block text-[10px]">Reviews Done</span><span class="font-bold text-slate-800">${m.reviews}</span></div>
+            <div class="bg-slate-50 p-2 rounded-xl"><span class="text-slate-400 block text-[10px]">Logged Hours</span><span class="font-bold text-slate-800">${m.hours}</span></div>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+            <span class="text-slate-400 font-medium">Activity Score</span>
+            <span class="font-black text-brand-600 text-sm">${m.score}</span>
+          </div>
+        </div>
+      `).join('');
+
+      // 8. Render Workspace View
+      document.getElementById('workspace-title').innerText = `${currentGroup.name} Workspace`;
+      document.getElementById('workspace-desc').innerText = currentGroup.desc;
+      document.getElementById('workspace-member-count-badge').innerText = `${currentGroup.members.length} Members`;
+
+      const wsMembersList = document.getElementById('workspace-members-list');
+      wsMembersList.innerHTML = currentGroup.members.map(m => `
+        <div class="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100 flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-brand-600 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-xs">
+            ${m.name.slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <h4 class="font-bold text-xs text-slate-900">${m.name}</h4>
+            <p class="text-[10px] text-slate-400 font-semibold mt-0.5">${m.role}</p>
+          </div>
+        </div>
+      `).join('');
+
+      const wsTasksTbody = document.getElementById('workspace-tasks-tbody');
+      wsTasksTbody.innerHTML = currentGroup.tasks.map(t => `
+        <tr class="hover:bg-slate-50/60 transition">
+          <td class="py-3 px-4 font-bold text-slate-800">${t.title}</td>
+          <td class="py-3 px-4 text-slate-600">${t.assignee}</td>
+          <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full text-[10px]">${t.status}</span></td>
+          <td class="py-3 px-4 font-mono text-slate-500">${t.deadline}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="4" class="py-6 text-center text-slate-400 font-medium">No tasks in this group workspace yet</td></tr>`;
+    }
+
+    // Initial language application and render
+    applyLanguage();
+  </script>
+</body>
+</html>
